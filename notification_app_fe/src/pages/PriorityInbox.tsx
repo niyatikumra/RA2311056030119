@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Box, Card, CardContent, Typography, Chip, CircularProgress, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import { Box, Card, CardContent, Typography, Chip, CircularProgress, Select, MenuItem, FormControl, Avatar } from "@mui/material";
+import { Work, EmojiEvents, School } from "@mui/icons-material";
 import { Log } from "../logger";
 
 interface Notification {
@@ -9,13 +10,13 @@ interface Notification {
   Timestamp: string;
 }
 
-const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiYXVkIjoiaHR0cDovLzIwLjI0NC41Ni4xNDQvZXZhbHVhdGlvbi1zZXJ2aWNlIiwiZW1haWwiOiJuazE1NzNAc3JtaXN0LmVkdS5pbiIsImV4cCI6MTc3NzcwNDUzMSwiaWF0IjoxNzc3NzAzNjMxLCJpc3MiOiJBZmZvcmQgTWVkaWNhbCBUZWNobm9sb2dpZXMgUHJpdmF0ZSBMaW1pdGVkIiwianRpIjoiNDRjOWY4NTUtY2JlYy00YTIzLTk5MDMtYjg5OGRlMzk3ZjZlIiwibG9jYWxlIjoiZW4tSU4iLCJuYW1lIjoibml5YXRpIiwic3ViIjoiMDBkYzVhNDctODljMy00ZGI2LTk2MDctYzFiNjY0Yjk2MzE0In0sImVtYWlsIjoibmsxNTczQHNybWlzdC5lZHUuaW4iLCJuYW1lIjoibml5YXRpIiwicm9sbE5vIjoicmEyMzExMDU2MDMwMTE5IiwiYWNjZXNzQ29kZSI6IlFrYnB4SCIsImNsaWVudElEIjoiMDBkYzVhNDctODljMy00ZGI2LTk2MDctYzFiNjY0Yjk2MzE0IiwiY2xpZW50U2VjcmV0Ijoid2ZCUVJGakNGVnJBenh0RCJ9.aB3Qhsx7tKwa5DNuPiosrTfutKveVReW4pzV7Sro4Zs";
+const TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiYXVkIjoiaHR0cDovLzIwLjI0NC41Ni4xNDQvZXZhbHVhdGlvbi1zZXJ2aWNlIiwiZW1haWwiOiJuazE1NzNAc3JtaXN0LmVkdS5pbiIsImV4cCI6MTc3NzcwNjcxMSwiaWF0IjoxNzc3NzA1ODExLCJpc3MiOiJBZmZvcmQgTWVkaWNhbCBUZWNobm9sb2dpZXMgUHJpdmF0ZSBMaW1pdGVkIiwianRpIjoiZGEwNzg1MzMtYzM5NC00MGM5LWJhOTUtMmMzZTEzODFlZDY3IiwibG9jYWxlIjoiZW4tSU4iLCJuYW1lIjoibml5YXRpIiwic3ViIjoiMDBkYzVhNDctODljMy00ZGI2LTk2MDctYzFiNjY0Yjk2MzE0In0sImVtYWlsIjoibmsxNTczQHNybWlzdC5lZHUuaW4iLCJuYW1lIjoibml5YXRpIiwicm9sbE5vIjoicmEyMzExMDU2MDMwMTE5IiwiYWNjZXNzQ29kZSI6IlFrYnB4SCIsImNsaWVudElEIjoiMDBkYzVhNDctODljMy00ZGI2LTk2MDctYzFiNjY0Yjk2MzE0IiwiY2xpZW50U2VjcmV0Ijoid2ZCUVJGakNGVnJBenh0RCJ9.MbqxHE8UtDGbVcvY3zxGvnYQyMi0yQ4O37QqFYjEfEQ";
 const PRIORITY: Record<string, number> = { Placement: 3, Result: 2, Event: 1 };
 
-const TYPE_COLORS: Record<string, "success" | "info" | "warning"> = {
-  Placement: "success",
-  Result: "info",
-  Event: "warning"
+const TYPE_CONFIG = {
+  Placement: { color: "#10b981", bg: "#ecfdf5", icon: <Work sx={{ fontSize: 20 }} />, label: "Placement" },
+  Result: { color: "#3b82f6", bg: "#eff6ff", icon: <School sx={{ fontSize: 20 }} />, label: "Result" },
+  Event: { color: "#f59e0b", bg: "#fffbeb", icon: <EmojiEvents sx={{ fontSize: 20 }} />, label: "Event" },
 };
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -37,7 +38,7 @@ export default function PriorityInbox() {
         headers: { Authorization: `Bearer ${TOKEN}` }
       });
       const data = await res.json();
-      const sorted = [...data.notifications].sort((a, b) => {
+      const sorted = [...(data.notifications || [])].sort((a, b) => {
         if (PRIORITY[b.Type] !== PRIORITY[a.Type]) return PRIORITY[b.Type] - PRIORITY[a.Type];
         return new Date(b.Timestamp).getTime() - new Date(a.Timestamp).getTime();
       });
@@ -50,24 +51,17 @@ export default function PriorityInbox() {
     }
   };
 
-  const topNotifications = notifications.slice(0, topN);
-
   return (
     <Box>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h6" sx={{ color: "#7c3aed", fontWeight: 700 }}>
-          🏆 Top Priority Notifications
+        <Typography variant="h6" sx={{ fontWeight: 700, color: "#1a1a2e" }}>
+          Priority Inbox
         </Typography>
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel sx={{ color: "#aaa" }}>Show Top</InputLabel>
+        <FormControl size="small">
           <Select
             value={topN}
-            label="Show Top"
-            onChange={(e) => {
-              setTopN(Number(e.target.value));
-              Log("frontend", "info", "component", `Top N changed to ${e.target.value}`);
-            }}
-            sx={{ color: "white", "& .MuiOutlinedInput-notchedOutline": { borderColor: "#7c3aed" } }}
+            onChange={(e) => { setTopN(Number(e.target.value)); Log("frontend", "info", "component", `TopN: ${e.target.value}`); }}
+            sx={{ borderRadius: 2, minWidth: 120, "& .MuiOutlinedInput-notchedOutline": { borderColor: "#764ba2" } }}
           >
             {[5, 10, 15, 20].map(n => (
               <MenuItem key={n} value={n}>Top {n}</MenuItem>
@@ -78,38 +72,47 @@ export default function PriorityInbox() {
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
-          <CircularProgress sx={{ color: "#7c3aed" }} />
+          <CircularProgress sx={{ color: "#764ba2" }} />
         </Box>
       ) : (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {topNotifications.map((n, i) => (
-            <Card
-              key={n.ID}
-              sx={{
-                bgcolor: "#1a1a2e",
-                border: "1px solid #7c3aed",
-                transition: "all 0.2s",
-                "&:hover": { transform: "translateY(-2px)", boxShadow: "0 4px 20px rgba(124,58,237,0.3)" }
-              }}
-            >
-              <CardContent sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Typography variant="h6" sx={{ color: "#7c3aed", minWidth: 40 }}>
+          {notifications.slice(0, topN).map((n, i) => {
+            const config = TYPE_CONFIG[n.Type];
+            return (
+              <Card
+                key={n.ID}
+                sx={{
+                  borderRadius: 3,
+                  border: `1px solid ${config.color}40`,
+                  boxShadow: `0 2px 12px ${config.color}20`,
+                  transition: "all 0.2s",
+                  "&:hover": { transform: "translateY(-2px)", boxShadow: `0 8px 30px ${config.color}40` }
+                }}
+              >
+                <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Typography variant="h5" sx={{ minWidth: 40, textAlign: "center" }}>
                     {i < 3 ? MEDALS[i] : `#${i + 1}`}
                   </Typography>
-                  <Box>
-                    <Typography sx={{ color: "white", fontWeight: 600 }}>
+                  <Avatar sx={{ bgcolor: config.bg, color: config.color }}>
+                    {config.icon}
+                  </Avatar>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography sx={{ fontWeight: 700, color: "#1a1a2e" }}>
                       {n.Message}
                     </Typography>
                     <Typography variant="caption" sx={{ color: "#888" }}>
                       {new Date(n.Timestamp).toLocaleString()}
                     </Typography>
                   </Box>
-                </Box>
-                <Chip label={n.Type} color={TYPE_COLORS[n.Type]} size="small" />
-              </CardContent>
-            </Card>
-          ))}
+                  <Chip
+                    label={config.label}
+                    size="small"
+                    sx={{ bgcolor: config.bg, color: config.color, fontWeight: 600, borderRadius: 2 }}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })}
         </Box>
       )}
     </Box>
